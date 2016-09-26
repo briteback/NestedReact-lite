@@ -1,9 +1,8 @@
-var Nested = require( 'nestedtypes' ),
-    pureRender = require( './purerender-mixin' ),
-    propTypes  = require( './propTypes' ),
-    tools = Nested.tools;
+import { tools, Events, Model } from 'nestedtypes'; // temporary
+import pureRender from './purerender-mixin';
+import { parseProps } from './propTypes';
 
-module.exports = function processSpec( spec, a_baseProto ){
+export default function processSpec( spec, a_baseProto ){
     var baseProto = a_baseProto || {};
     spec.mixins || ( spec.mixins = [] );
 
@@ -54,7 +53,7 @@ var EventsMixin = Object.assign( {
     componentWillUnmount : function(){
         this.off();
         this.stopListening();
-        
+
         // Prevent asynchronous rendering if queued.
         this._queuedForUpdate = false;
 
@@ -63,7 +62,7 @@ var EventsMixin = Object.assign( {
     },
 
     asyncUpdate : asyncUpdate
-}, Nested.Events );
+}, Events );
 
 /***
  * Autobinding
@@ -79,7 +78,7 @@ function processAutobind( spec, baseProto ){
 var AutoBindMixin = {
     componentWillMount : function(){
         var autobind = this._autobind;
-        
+
         for( var i = 0; i < autobind.length; i++ ){
             var name = autobind[ i ];
             this[ name ] = this[ name ].bind( this );
@@ -92,14 +91,14 @@ function processContext( spec, baseProto ){
     var context = getTypeSpecs( spec, 'context' );
     if( context ){
         spec._context = tools.defaults( context, baseProto._context || {} );
-        spec.contextTypes = propTypes.parseProps( context ).propTypes;
+        spec.contextTypes = parseProps( context ).propTypes;
         delete spec.context;
     }
 
     var childContext = getTypeSpecs( spec, 'childContext' );
     if( childContext ){
         spec._childContext = tools.defaults( childContext, baseProto._childContext || {} );
-        spec.childContextTypes = propTypes.parseProps( childContext ).propTypes;
+        spec.childContextTypes = parseProps( childContext ).propTypes;
         delete spec.childContext;
     }
 }
@@ -111,7 +110,7 @@ function processState( spec, baseProto ){
     // process state spec...
     var attributes = getTypeSpecs( spec, 'state' ) || getTypeSpecs( spec, 'attributes' )
     if( attributes || spec.Model || baseProto.Model ){
-        var BaseModel = baseProto.Model || spec.Model || Nested.Model;
+        var BaseModel = baseProto.Model || spec.Model || Model;
         spec.Model    = attributes ? BaseModel.extend( { defaults : attributes } ) : BaseModel;
         spec.mixins.push( ModelStateMixin );
         delete spec.state;
@@ -150,7 +149,7 @@ function processProps( spec, baseProto ){
 
     if( props ){
         spec._props = tools.defaults( props, baseProto._props || {} );
-        var parsedProps = propTypes.parseProps( props );
+        var parsedProps = parseProps( props );
 
         spec.propTypes = parsedProps.propTypes;
 
@@ -182,7 +181,7 @@ function processListenToProps( spec, baseProto ){
             spec.mixins.unshift( ListenToPropsMixin );
         }
 
-        delete spec.listenToProps; 
+        delete spec.listenToProps;
     }
 }
 
