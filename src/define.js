@@ -17,36 +17,40 @@ export default function processSpec( spec, a_baseProto ){
     return spec;
 }
 
-
 /***
  * Throttled asynchronous version of forceUpdate.
  */
 var _queue = null;
 
-function asyncUpdate(){
-    if( !_queue ){
-        // schedule callback
-        requestAnimationFrame( _processAsyncUpdate );
-        _queue = [];
-    }
+function syncAsyncUpdate(){
+    // For some weird reason async update doesn't work. Input's state is being messed up.
+    // Just call forceUpdate for now.
+    this.forceUpdate();
+}
 
-    if( !this._queuedForUpdate ){
-        _queue.push( this );
-        this._queuedForUpdate = true;
-    }
+function asyncUpdate(){
+  if( !_queue ){
+    requestAnimationFrame( _processAsyncUpdate );
+    _queue = [];
+  }
+
+  if( !this._queuedForUpdate ){
+    _queue.push( this );
+    this._queuedForUpdate = true;
+  }
 }
 
 function _processAsyncUpdate(){
-    var queue = _queue;
-    _queue = null;
+  var queue = _queue;
+  _queue = null;
 
-    for( var i = 0; i < queue.length; i++ ){
-        var component = queue[ i ];
-        if( component._queuedForUpdate ){
-            component._queuedForUpdate = false;
-            component.forceUpdate();
-        }
+  for( var i = 0; i < queue.length; i++ ){		
+    var component = queue[ i ];
+    if( component._queuedForUpdate ){
+      component._queuedForUpdate = false;
+      component.forceUpdate();
     }
+  }
 }
 
 var EventsMixin = Object.assign( {
@@ -121,25 +125,30 @@ function processState( spec, baseProto ){
 var ModelStateMixin = {
     model         : null,
 
-    _onChildrenChange : function(){
-        asyncUpdate.call( this );
-    },
+    _onChildrenChange : function(){},
 
     componentWillMount : function(){
-        this.state = this.model = this.props._keepState || new this.Model();
+        var state = this.state = this.model = this.props._keepState || new this.Model();
+        state._owner = this;
+        state._ownerKey = 'state';
     },
 
     componentDidMount : function(){
-        this.model._owner = this;
+        // Start UI updates on state changes.
+        this._onChildrenChange = this.asyncUpdate;
     },
 
     // reference global store to fix model's store locator
     getStore : function(){
-        return this.model._defaultStore;
+        // Attempt to get the store from the context first. Then - fallback to the state's default store.
+        // TBD: Need to figure out a good way of managing local stores.
+        var context = this.context;
+        return ( context && context.store ) || this.model._defaultStore;
     },
 
     componentWillUnmount : function(){
-        this.model._owner = null;
+        // Release the state model.
+        this.model._ownerKey = this.model._owner = void 0;
     }
 };
 

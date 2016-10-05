@@ -201,7 +201,6 @@ var _queue = null;
 
 function asyncUpdate() {
     if (!_queue) {
-        // schedule callback
         requestAnimationFrame(_processAsyncUpdate);
         _queue = [];
     }
@@ -297,25 +296,30 @@ function processState(spec, baseProto) {
 var ModelStateMixin = {
     model: null,
 
-    _onChildrenChange: function _onChildrenChange() {
-        asyncUpdate.call(this);
-    },
+    _onChildrenChange: function _onChildrenChange() {},
 
     componentWillMount: function componentWillMount() {
-        this.state = this.model = this.props._keepState || new this.Model();
+        var state = this.state = this.model = this.props._keepState || new this.Model();
+        state._owner = this;
+        state._ownerKey = 'state';
     },
 
     componentDidMount: function componentDidMount() {
-        this.model._owner = this;
+        // Start UI updates on state changes.
+        this._onChildrenChange = this.asyncUpdate;
     },
 
     // reference global store to fix model's store locator
     getStore: function getStore() {
-        return this.model._defaultStore;
+        // Attempt to get the store from the context first. Then - fallback to the state's default store.
+        // TBD: Need to figure out a good way of managing local stores.
+        var context = this.context;
+        return context && context.store || this.model._defaultStore;
     },
 
     componentWillUnmount: function componentWillUnmount() {
-        this.model._owner = null;
+        // Release the state model.
+        this.model._ownerKey = this.model._owner = void 0;
     }
 };
 
