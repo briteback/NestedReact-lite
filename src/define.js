@@ -44,7 +44,7 @@ function _processAsyncUpdate(){
   var queue = _queue;
   _queue = null;
 
-  for( var i = 0; i < queue.length; i++ ){		
+  for( var i = 0; i < queue.length; i++ ){
     var component = queue[ i ];
     if( component._queuedForUpdate ){
       component._queuedForUpdate = false;
@@ -65,7 +65,7 @@ var EventsMixin = Object.assign( {
         //if( this.state ) this.state.dispose(); // Not sure if it will work ok with current code base.
     },
 
-    asyncUpdate : asyncUpdate
+    asyncUpdate
 }, Events );
 
 /***
