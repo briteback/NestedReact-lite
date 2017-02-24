@@ -26,11 +26,7 @@ ModelLink.prototype = Object.create( Link.prototype, {
 
     error : {
         get : function(){
-            if( this._error === void 0 ){
-                this._error = this.model.getValidationError( this.attr );
-            }
-
-            return this._error;
+            return this._error === void 0 ? this.model.getValidationError( this.attr ): this._error;
         },
 
         set : function( x ){
@@ -39,7 +35,7 @@ ModelLink.prototype = Object.create( Link.prototype, {
     }
 } );
 
-var ModelProto = Nested.Model.prototype;
+var ModelProto = Nested.Record.prototype;
 
 Object.defineProperty( ModelProto, 'links', {
     get : function(){
@@ -62,8 +58,17 @@ ModelProto.getLink = function( key ){
 ModelProto.linkAll = function(){
     var links = this.links;
 
-    for( var i = 0; i < arguments.length; i++ ){
-        cacheLink( links, this, arguments[ i ] );
+    if( arguments.length ){
+        for( var i = 0; i < arguments.length; i++ ){
+            cacheLink( links, this, arguments[ i ] );
+        }
+    }
+    else{
+        var attributes = this.attributes;
+
+        for( var key in attributes ){
+            attributes[ key ] === void 0 || cacheLink( links, this, key );
+        }
     }
 
     return links;
@@ -92,7 +97,7 @@ CollectionLink.prototype = Object.create( Link.prototype, {
     }
 } );
 
-var CollectionProto = Nested.Collection.prototype;
+var CollectionProto = Nested.Record.Collection.prototype;
 
 CollectionProto.hasLink = function( model ){
     return new CollectionLink( this, model );

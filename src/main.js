@@ -17,7 +17,6 @@ const NestedReact = Object.create( React );;
 NestedReact.createClass = createClass;
 NestedReact.define = define;
 
-//var ComponentView = require( './component-view' );
 
 // export hook to override base View class used...
 //NestedReact.useView = function( View ){

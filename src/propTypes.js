@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Model } from 'nestedtypes';
 
@@ -10,12 +11,16 @@ export function parseProps( props ){
         modelProto = Model.defaults( props ).prototype;
 
     modelProto.forEachAttr( modelProto._attributes, function( spec, name ){
+        // Skip auto-generated `id` attribute.
         if( name !== 'id' ){
-            propTypes[ name ] = translateType( spec.type );
+            // Translate props type to the propTypes guard.
+            propTypes[ name ] = translateType( spec.type, spec.options.isRequired );
 
+            // If default value is explicitly provided...
             if( spec.value !== void 0 ){
+                //...append it to getDefaultProps function.
                 defaults || ( defaults = {} );
-                defaults[ name ] = spec.value;
+                defaults[ name ] = spec.convert( spec.value );
             }
         }
     });
@@ -31,7 +36,12 @@ var PropTypes = React.PropTypes;
 export function Node(){}
 export function Element(){}
 
-function translateType( Type ){
+function translateType( Type, isRequired ){
+    var T = _translateType( Type );
+    return isRequired ? T.isRequired : T;
+}
+
+function _translateType( Type ){
     switch( Type ){
         case Number :
         case Integer :

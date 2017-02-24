@@ -3,13 +3,19 @@ import { tools, Mixable, mergeProps } from 'nestedtypes';
 import processSpec from './define';
 
 var reactMixinRules = {
-    componentWillMount : 'reverse',
-    componentDidMount : 'reverse',
+    componentWillMount        : 'reverse',
+    componentDidMount         : 'reverse',
     componentWillReceiveProps : 'reverse',
-    shouldComponentUpdate : 'some',
-    componentWillUpdate : 'reverse',
-    componentDidUpdate : 'reverse',
-    componentWillUnmount : 'sequence',
+    shouldComponentUpdate     : 'some',
+    componentWillUpdate       : 'reverse',
+    componentDidUpdate        : 'reverse',
+    componentWillUnmount      : 'sequence',
+    state                     : 'merge',
+    store                     : 'merge',
+    props                     : 'merge',
+    context                   : 'merge',
+    childContext              : 'merge',
+    getChildContext           : 'mergeSequence'
 };
 
 export default function createClass( a_spec ){
@@ -36,8 +42,8 @@ export default function createClass( a_spec ){
 Mixable.mixTo( React.Component );
 
 React.Component.define = function( protoProps, staticProps ){
-    var BaseClass = tools.getBaseClass( this ),
-        staticsDefinition = tools.getChangedStatics( this, 'state', 'props', 'autobind', 'context', 'childContext', 'listenToProps', 'pureRender' ),
+    var BaseClass          = tools.getBaseClass( this ),
+        staticsDefinition = tools.getChangedStatics( this, 'state', 'Model', 'props', 'autobind', 'context', 'childContext', 'listenToProps', 'pureRender' ),
         combinedDefinition = tools.assign( staticsDefinition, protoProps || {} );
 
     var definition = processSpec( combinedDefinition, this.prototype );
@@ -47,7 +53,7 @@ React.Component.define = function( protoProps, staticProps ){
     if( definition.getDefaultProps ) this.defaultProps = definition.getDefaultProps();
     if( definition.propTypes ) this.propTypes = definition.propTypes;
     if( definition.contextTypes ) this.contextTypes = definition.contextTypes;
-    if( definition.childContextTypes ) this.childsContextTypes = definition.childsContextTypes;
+    if( definition.childContextTypes ) this.childContextTypes = definition.childContextTypes;
 
     var protoDefinition = tools.omit( definition, 'getDefaultProps', 'propTypes', 'contextTypes', 'childContextTypes' );
     Mixable.define.call( this, protoDefinition, staticProps );

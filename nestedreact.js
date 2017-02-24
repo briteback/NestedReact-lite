@@ -1,4 +1,4 @@
-import React from 'react';
+import React$1 from 'react';
 import { Events, Mixable, Model, define, mergeProps, tools } from 'nestedtypes';
 
 //module.exports = function( propTypes ){
@@ -43,12 +43,16 @@ function parseProps(props) {
         modelProto = Model.defaults(props).prototype;
 
     modelProto.forEachAttr(modelProto._attributes, function (spec, name) {
+        // Skip auto-generated `id` attribute.
         if (name !== 'id') {
-            propTypes[name] = translateType(spec.type);
+            // Translate props type to the propTypes guard.
+            propTypes[name] = translateType(spec.type, spec.options.isRequired);
 
+            // If default value is explicitly provided...
             if (spec.value !== void 0) {
+                //...append it to getDefaultProps function.
                 defaults || (defaults = {});
-                defaults[name] = spec.value;
+                defaults[name] = spec.convert(spec.value);
             }
         }
     });
@@ -59,12 +63,17 @@ function parseProps(props) {
     };
 }
 
-var PropTypes = React.PropTypes;
+var PropTypes = React$1.PropTypes;
 
 function Node() {}
 function Element() {}
 
-function translateType(Type) {
+function translateType(Type, isRequired) {
+    var T = _translateType(Type);
+    return isRequired ? T.isRequired : T;
+}
+
+function _translateType(Type) {
     switch (Type) {
         case Number:
         case Integer:
@@ -183,11 +192,12 @@ function processSpec(spec, a_baseProto) {
     var baseProto = a_baseProto || {};
     spec.mixins || (spec.mixins = []);
 
-    processContext(spec, baseProto);
-    processAutobind(spec, baseProto);
+    //processStore( spec, baseProto );
     processState(spec, baseProto);
+    processContext(spec, baseProto);
     processProps(spec, baseProto);
     processListenToProps(spec, baseProto);
+    processAutobind(spec, baseProto);
 
     spec.mixins.push(EventsMixin);
 
@@ -224,19 +234,52 @@ function _processAsyncUpdate() {
     }
 }
 
+function returnFalse() {
+    return false;
+}
+
+/**
+ * Mixin which is attached to all components.
+ */
 var EventsMixin = Object.assign({
     componentWillUnmount: function componentWillUnmount() {
+        // Prevent memory leaks when working with events.
         this.off();
         this.stopListening();
 
         // Prevent asynchronous rendering if queued.
         this._queuedForUpdate = false;
 
-        // TODO: Enable it in future.
-        //if( this.state ) this.state.dispose(); // Not sure if it will work ok with current code base.
+        // Mark component as disposed.
+        this._disposed = true;
     },
 
-    asyncUpdate: asyncUpdate
+    asyncUpdate: asyncUpdate,
+
+    /**
+     * Performs transactional update for both props and state.
+     * Suppress updates during the transaction, and force update aftewards.
+     * Wrapping the sequence of changes in a transactions guarantees that
+     * React component will be updated _after_ all the changes to the
+     * both props and local state are applied.
+     *
+     * @param fun - takes
+     */
+    transaction: function transaction(fun) {
+        var shouldComponentUpdate = this.shouldComponentUpdate,
+            isRoot = shouldComponentUpdate !== returnFalse;
+
+        if (isRoot) {
+            this.shouldComponentUpdate = returnFalse;
+        }
+
+        fun(this.props, this.state);
+
+        if (isRoot) {
+            this.shouldComponentUpdate = shouldComponentUpdate;
+            this.asyncUpdate();
+        }
+    }
 }, Events);
 
 /***
@@ -278,6 +321,85 @@ function processContext(spec, baseProto) {
     }
 }
 
+// Store spec.
+
+/*function processStore( spec, baseProto ){
+    var store = getTypeSpecs( spec, 'store' );
+    if( store ){
+        delete spec.store;
+
+        if( store instanceof Store ){
+            // Direct reference to an existing store. Put it to the prototype.
+            spec.store = store;
+            spec.mixins.push( ExternalStoreMixin );
+        }
+        else {
+            spec.Store = store;
+            spec.mixins.push( InternalStoreMixin );
+            spec.mixins.push( UpdateOnNestedChangesMixin );
+        }
+
+        spec.mixins.push( ExposeStoreMixin );
+    }
+}*/
+
+var UpdateOnNestedChangesMixin = {
+    _onChildrenChange: function _onChildrenChange() {},
+
+    componentDidMount: function componentDidMount() {
+        this._onChildrenChange = this.asyncUpdate;
+    }
+};
+
+/**
+ * Attached whenever the store declaration of any form is present in the component.
+ */
+/*var ExposeStoreMixin = {
+    childContext : {
+        _nestedStore : Store
+    },
+
+    getChildContext : function(){
+        return { _nestedStore : this.store };
+    },
+
+    getStore : function(){
+        return this.store;
+    }
+};*/
+
+/**
+ * External store must just track the changes and trigger render.
+ * TBD: don't use it yet.
+ */
+/*var ExternalStoreMixin = {
+    componentDidMount : function(){
+        // Start UI updates on state changes.
+        this.listenTo( this.store, 'change', this.asyncUpdate );
+    }
+};
+
+var InternalStoreMixin = {
+    componentWillMount : function(){
+        var store = this.store = new this.Store();
+        store._owner = this;
+        store._ownerKey = 'store';
+    },
+
+    // Will be called by the store when the lookup will fail.
+    get : function( key ){
+        // Ask upper store.
+        var store = ModelStateMixin.getStore.call( this, key );
+        return store && store.get( key );
+    },
+
+    componentWillUnmount : function(){
+        this.store._ownerKey = this.store._owner = void 0;
+        this.store.dispose();
+        this.store = null;
+    }
+};*/
+
 /*****************
  * State
  */
@@ -286,8 +408,11 @@ function processState(spec, baseProto) {
     var attributes = getTypeSpecs(spec, 'state') || getTypeSpecs(spec, 'attributes');
     if (attributes || spec.Model || baseProto.Model) {
         var BaseModel = baseProto.Model || spec.Model || Model;
-        spec.Model = attributes ? BaseModel.extend({ defaults: attributes }) : BaseModel;
+        spec.Model = attributes ? typeof attributes === 'function' ? attributes : BaseModel.extend({ defaults: attributes }) : BaseModel;
+
         spec.mixins.push(ModelStateMixin);
+        spec.mixins.push(UpdateOnNestedChangesMixin);
+
         delete spec.state;
         delete spec.attributes;
     }
@@ -296,30 +421,28 @@ function processState(spec, baseProto) {
 var ModelStateMixin = {
     model: null,
 
-    _onChildrenChange: function _onChildrenChange() {},
-
     componentWillMount: function componentWillMount() {
         var state = this.state = this.model = this.props._keepState || new this.Model();
         state._owner = this;
         state._ownerKey = 'state';
     },
 
-    componentDidMount: function componentDidMount() {
-        // Start UI updates on state changes.
-        this._onChildrenChange = this.asyncUpdate;
-    },
+    /*context : {
+        _nestedStore : Store
+    },*/
 
     // reference global store to fix model's store locator
-    getStore: function getStore() {
+    /*getStore : function(){
         // Attempt to get the store from the context first. Then - fallback to the state's default store.
         // TBD: Need to figure out a good way of managing local stores.
-        var context = this.context;
-        return context && context.store || this.model._defaultStore;
-    },
+        var context, state;
+         return  ( ( context = this.context ) && context._nestedStore ) ||
+                ( ( state = this.state ) && state._defaultStore );
+    },*/
 
     componentWillUnmount: function componentWillUnmount() {
         // Release the state model.
-        this.model._ownerKey = this.model._owner = void 0;
+        this._preventDispose /* hack for component-view to preserve the state */ || this.model.dispose();
     }
 };
 
@@ -443,7 +566,13 @@ var reactMixinRules = {
     shouldComponentUpdate: 'some',
     componentWillUpdate: 'reverse',
     componentDidUpdate: 'reverse',
-    componentWillUnmount: 'sequence'
+    componentWillUnmount: 'sequence',
+    state: 'merge',
+    store: 'merge',
+    props: 'merge',
+    context: 'merge',
+    childContext: 'merge',
+    getChildContext: 'mergeSequence'
 };
 
 function createClass(a_spec) {
@@ -459,7 +588,7 @@ function createClass(a_spec) {
         mergeProps(spec, mixins[i], reactMixinRules);
     }
 
-    var Component = React.createClass(spec);
+    var Component = React$1.createClass(spec);
 
     // attach lazily evaluated backbone View class
     //defineBackboneProxy( Component );
@@ -467,11 +596,11 @@ function createClass(a_spec) {
     return Component;
 }
 
-Mixable.mixTo(React.Component);
+Mixable.mixTo(React$1.Component);
 
-React.Component.define = function (protoProps, staticProps) {
+React$1.Component.define = function (protoProps, staticProps) {
     var BaseClass = tools.getBaseClass(this),
-        staticsDefinition = tools.getChangedStatics(this, 'state', 'props', 'autobind', 'context', 'childContext', 'listenToProps', 'pureRender'),
+        staticsDefinition = tools.getChangedStatics(this, 'state', 'Model', 'props', 'autobind', 'context', 'childContext', 'listenToProps', 'pureRender'),
         combinedDefinition = tools.assign(staticsDefinition, protoProps || {});
 
     var definition = processSpec(combinedDefinition, this.prototype);
@@ -481,7 +610,7 @@ React.Component.define = function (protoProps, staticProps) {
     if (definition.getDefaultProps) this.defaultProps = definition.getDefaultProps();
     if (definition.propTypes) this.propTypes = definition.propTypes;
     if (definition.contextTypes) this.contextTypes = definition.contextTypes;
-    if (definition.childContextTypes) this.childsContextTypes = definition.childsContextTypes;
+    if (definition.childContextTypes) this.childContextTypes = definition.childContextTypes;
 
     var protoDefinition = tools.omit(definition, 'getDefaultProps', 'propTypes', 'contextTypes', 'childContextTypes');
     Mixable.define.call(this, protoDefinition, staticProps);
@@ -489,7 +618,7 @@ React.Component.define = function (protoProps, staticProps) {
     return this;
 };
 
-React.Component.mixinRules(reactMixinRules);
+React$1.Component.mixinRules(reactMixinRules);
 
 /*function defineBackboneProxy( Component ){
     Object.defineProperty( Component, 'View', {
@@ -506,14 +635,12 @@ React.Component.mixinRules(reactMixinRules);
 */
 // extend React namespace
 //var NestedReact = module.exports = Object.create( React );
-var NestedReact = Object.create(React);
+var NestedReact = Object.create(React$1);
 
 // listenToProps, listenToState, model, attributes, Model
 //NestedReact.createClass = require( './createClass' );
 NestedReact.createClass = createClass;
 NestedReact.define = define;
-
-//var ComponentView = require( './component-view' );
 
 // export hook to override base View class used...
 //NestedReact.useView = function( View ){

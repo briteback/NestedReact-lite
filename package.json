@@ -36,14 +36,15 @@
   },
   "files": [
     "nestedreact.js",
-    "nestedreact.js.map"
+    "nestedreact.js.map",
+    "tags.js",
+    "tags.jsx"
   ],
   "license": "MIT",
-  "version": "1.0.1-rc5",
   "scripts": {
     "build": "./node_modules/.bin/rollup -c",
     "all" : "npm run build && npm run deploy",
-    "deploy" : "copy .\\nestedreact.js ..\\observer-frontend\\htdocs\\node_modules\\nestedreact",
+    "deploy" : "cp ./nestedreact.* ../observer-frontend/htdocs/js/lib/nested",
     "watch": "./node_modules/.bin/webpack --watch"
   }
 }
