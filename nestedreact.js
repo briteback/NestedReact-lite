@@ -21,18 +21,18 @@ var pureRender = function (propTypes) {
     return {
         _changeTokens: null,
 
-        shouldComponentUpdate: function shouldComponentUpdate(nextProps) {
+        shouldComponentUpdate(nextProps) {
             return isChanged(this._changeTokens, nextProps, this.state);
         },
 
-        componentDidMount: function componentDidMount() {
+        componentDidMount() {
             this._changeTokens = new ChangeTokens(this.props, this.state);
         },
-        componentDidUpdate: function componentDidUpdate() {
+        componentDidUpdate() {
             this._changeTokens = new ChangeTokens(this.props, this.state);
         }
     };
-}
+};
 
 /*var Nested = require( 'nestedtypes' ),
     React  = require( 'react' );*/
@@ -105,89 +105,6 @@ exports.Element = Element;
 exports.parseProps = parseProps;
 */
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var get = function get(object, property, receiver) {
-  if (object === null) object = Function.prototype;
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent === null) {
-      return undefined;
-    } else {
-      return get(parent, property, receiver);
-    }
-  } else if ("value" in desc) {
-    return desc.value;
-  } else {
-    var getter = desc.get;
-
-    if (getter === undefined) {
-      return undefined;
-    }
-
-    return getter.call(receiver);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var set = function set(object, property, value, receiver) {
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent !== null) {
-      set(parent, property, value, receiver);
-    }
-  } else if ("value" in desc && desc.writable) {
-    desc.value = value;
-  } else {
-    var setter = desc.set;
-
-    if (setter !== undefined) {
-      setter.call(receiver, value);
-    }
-  }
-
-  return value;
-};
-
 function processSpec(spec, a_baseProto) {
     var baseProto = a_baseProto || {};
     spec.mixins || (spec.mixins = []);
@@ -242,7 +159,7 @@ function returnFalse() {
  * Mixin which is attached to all components.
  */
 var EventsMixin = Object.assign({
-    componentWillUnmount: function componentWillUnmount() {
+    componentWillUnmount() {
         // Prevent memory leaks when working with events.
         this.off();
         this.stopListening();
@@ -254,7 +171,7 @@ var EventsMixin = Object.assign({
         this._disposed = true;
     },
 
-    asyncUpdate: asyncUpdate,
+    asyncUpdate,
 
     /**
      * Performs transactional update for both props and state.
@@ -265,7 +182,7 @@ var EventsMixin = Object.assign({
      *
      * @param fun - takes
      */
-    transaction: function transaction(fun) {
+    transaction(fun) {
         var shouldComponentUpdate = this.shouldComponentUpdate,
             isRoot = shouldComponentUpdate !== returnFalse;
 
@@ -294,7 +211,7 @@ function processAutobind(spec, baseProto) {
 }
 
 var AutoBindMixin = {
-    componentWillMount: function componentWillMount() {
+    componentWillMount() {
         var autobind = this._autobind;
 
         for (var i = 0; i < autobind.length; i++) {
@@ -344,9 +261,9 @@ function processContext(spec, baseProto) {
 }*/
 
 var UpdateOnNestedChangesMixin = {
-    _onChildrenChange: function _onChildrenChange() {},
+    _onChildrenChange() {},
 
-    componentDidMount: function componentDidMount() {
+    componentDidMount() {
         this._onChildrenChange = this.asyncUpdate;
     }
 };
@@ -421,7 +338,7 @@ function processState(spec, baseProto) {
 var ModelStateMixin = {
     model: null,
 
-    componentWillMount: function componentWillMount() {
+    componentWillMount() {
         var state = this.state = this.model = this.props._keepState || new this.Model();
         state._owner = this;
         state._ownerKey = 'state';
@@ -440,7 +357,7 @@ var ModelStateMixin = {
                 ( ( state = this.state ) && state._defaultStore );
     },*/
 
-    componentWillUnmount: function componentWillUnmount() {
+    componentWillUnmount() {
         // Release the state model.
         this._preventDispose /* hack for component-view to preserve the state */ || this.model.dispose();
     }
@@ -523,7 +440,7 @@ function registerPropsListener(component, prevProps, name, events) {
         prevEmitter && component.stopListening(prevEmitter);
 
         if (emitter) {
-            if ((typeof events === 'undefined' ? 'undefined' : _typeof(events)) === 'object') {
+            if (typeof events === 'object') {
                 component.listenTo(emitter, events);
             } else {
                 component.listenTo(emitter, events || emitter._changeEventName, asyncUpdate);
@@ -635,7 +552,7 @@ React$1.Component.mixinRules(reactMixinRules);
 */
 // extend React namespace
 //var NestedReact = module.exports = Object.create( React );
-var NestedReact = Object.create(React$1);
+const NestedReact = Object.create(React$1);
 
 // listenToProps, listenToState, model, attributes, Model
 //NestedReact.createClass = require( './createClass' );
@@ -656,4 +573,17 @@ NestedReact.define = define;
 NestedReact.Node = Node.value(null);
 NestedReact.Element = Element.value(null);
 
-export default NestedReact;
+// Extend react components to have backbone-style jquery accessors
+//var Component     = React.createClass( { render : function(){} } ),
+//    BaseComponent = Object.getPrototypeOf( Component.prototype );
+
+//Object.defineProperties( BaseComponent, {
+//    el  : { get : function(){ return ReactDOM.findDOMNode( this ); } },
+//    $el : { get : function(){ return $( this.el ); } },
+//    $   : { value : function( sel ){ return this.$el.find( sel ); } }
+//} );
+
+//NestedReact.Link = require( './nested-link' );
+const define$1 = define;
+
+export { define$1 as define };export default NestedReact;

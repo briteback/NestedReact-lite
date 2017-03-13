@@ -61,7 +61,7 @@ function returnFalse(){ return false; }
  * Mixin which is attached to all components.
  */
 var EventsMixin = Object.assign( {
-    componentWillUnmount : function(){
+    componentWillUnmount(){
         // Prevent memory leaks when working with events.
         this.off();
         this.stopListening();
@@ -84,7 +84,7 @@ var EventsMixin = Object.assign( {
      *
      * @param fun - takes
      */
-    transaction : function( fun ){
+    transaction( fun ){
         var shouldComponentUpdate = this.shouldComponentUpdate,
               isRoot = shouldComponentUpdate !== returnFalse;
 
@@ -117,7 +117,7 @@ function processAutobind( spec, baseProto ){
 }
 
 var AutoBindMixin = {
-    componentWillMount : function(){
+    componentWillMount(){
         var autobind = this._autobind;
 
         for( var i = 0; i < autobind.length; i++ ){
@@ -167,9 +167,9 @@ function processContext( spec, baseProto ){
 }*/
 
 var UpdateOnNestedChangesMixin = {
-    _onChildrenChange : function(){},
+    _onChildrenChange(){},
 
-    componentDidMount : function(){
+    componentDidMount(){
         this._onChildrenChange = this.asyncUpdate;
     }
 };
@@ -246,7 +246,7 @@ function processState( spec, baseProto ){
 var ModelStateMixin = {
     model         : null,
 
-    componentWillMount : function(){
+    componentWillMount(){
         var state = this.state = this.model = this.props._keepState || new this.Model();
         state._owner = this;
         state._ownerKey = 'state';
@@ -266,7 +266,7 @@ var ModelStateMixin = {
                 ( ( state = this.state ) && state._defaultStore );
     },*/
 
-    componentWillUnmount : function(){
+    componentWillUnmount(){
         // Release the state model.
         this._preventDispose /* hack for component-view to preserve the state */ || this.model.dispose();
     }

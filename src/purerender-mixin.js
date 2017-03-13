@@ -18,14 +18,14 @@ export default function( propTypes ){
     return {
         _changeTokens : null,
 
-        shouldComponentUpdate : function( nextProps ){
+        shouldComponentUpdate( nextProps ){
             return isChanged( this._changeTokens, nextProps, this.state );
         },
 
-        componentDidMount  : function(){
+        componentDidMount(){
             this._changeTokens = new ChangeTokens( this.props, this.state );
         },
-        componentDidUpdate : function(){
+        componentDidUpdate(){
             this._changeTokens = new ChangeTokens( this.props, this.state );
         }
     }

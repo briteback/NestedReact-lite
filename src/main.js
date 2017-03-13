@@ -1,5 +1,5 @@
 import React from 'react';
-import { define } from 'nestedtypes';
+import { define as defImport } from 'nestedtypes';
 import createClass from './createClass';
 import { Node, Element } from './propTypes';
 
@@ -15,7 +15,7 @@ const NestedReact = Object.create( React );;
 // listenToProps, listenToState, model, attributes, Model
 //NestedReact.createClass = require( './createClass' );
 NestedReact.createClass = createClass;
-NestedReact.define = define;
+NestedReact.define = defImport;
 
 
 // export hook to override base View class used...
@@ -43,5 +43,5 @@ NestedReact.Element = Element.value( null );
 //} );
 
 //NestedReact.Link = require( './nested-link' );
-
+export const define = defImport;
 export default NestedReact;
