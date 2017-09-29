@@ -1,6 +1,6 @@
 import React from 'react';
 import { define as defImport } from 'nestedtypes';
-import createClass from './createClass';
+//import createClass from './createClass';
 import { Node, Element } from './propTypes';
 
 /*var React    = require( 'react' ),
@@ -14,7 +14,7 @@ const NestedReact = Object.create( React );;
 
 // listenToProps, listenToState, model, attributes, Model
 //NestedReact.createClass = require( './createClass' );
-NestedReact.createClass = createClass;
+//NestedReact.createClass = createClass;
 NestedReact.define = defImport;
 
 

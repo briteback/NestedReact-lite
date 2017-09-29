@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Model } from 'nestedtypes';
-
+import PropTypes from 'prop-types';
 /*var Nested = require( 'nestedtypes' ),
     React  = require( 'react' );*/
 
@@ -30,8 +30,6 @@ export function parseProps( props ){
         defaults : defaults
     };
 }
-
-var PropTypes = React.PropTypes;
 
 export function Node(){}
 export function Element(){}
