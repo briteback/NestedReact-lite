@@ -2,7 +2,7 @@ import React from 'react';
 import { tools, Mixable, mergeProps } from 'nestedtypes';
 import processSpec from './define';
 
-var reactMixinRules = {
+const reactMixinRules = {
     componentWillMount        : 'reverse',
     componentDidMount         : 'reverse',
     componentWillReceiveProps : 'reverse',
@@ -18,7 +18,7 @@ var reactMixinRules = {
     getChildContext           : 'mergeSequence'
 };
 
-export default function createClass( a_spec ){
+/*export default function createClass( a_spec ){
     var spec = processSpec( a_spec ),
         mixins = spec.mixins || [];
 
@@ -37,7 +37,7 @@ export default function createClass( a_spec ){
     //defineBackboneProxy( Component );
 
     return Component;
-}
+}*/
 
 Mixable.mixTo( React.Component );
 

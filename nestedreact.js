@@ -1,38 +1,6 @@
 import React$1 from 'react';
-import { Events, Mixable, Model, define, mergeProps, tools } from 'nestedtypes';
-
-//module.exports = function( propTypes ){
-var pureRender = function (propTypes) {
-    var ctor = ['var v;this._s=s&&s._changeToken'],
-        isChanged = ['var v;return(s&&s._changeToken!==t._s)'];
-
-    for (var name in propTypes) {
-        var propExpr = '((v=p.' + name + ')&&v._changeToken)||v';
-
-        ctor.push('this.' + name + '=' + propExpr);
-        isChanged.push('t.' + name + '!==(' + propExpr + ')');
-    }
-
-    var ChangeTokens = new Function('p', 's', ctor.join(';')),
-        isChanged = new Function('t', 'p', 's', isChanged.join('||'));
-
-    ChangeTokens.prototype = null;
-
-    return {
-        _changeTokens: null,
-
-        shouldComponentUpdate(nextProps) {
-            return isChanged(this._changeTokens, nextProps, this.state);
-        },
-
-        componentDidMount() {
-            this._changeTokens = new ChangeTokens(this.props, this.state);
-        },
-        componentDidUpdate() {
-            this._changeTokens = new ChangeTokens(this.props, this.state);
-        }
-    };
-};
+import { Events, Mixable, Model, define, tools } from 'nestedtypes';
+import PropTypes from 'prop-types';
 
 /*var Nested = require( 'nestedtypes' ),
     React  = require( 'react' );*/
@@ -62,8 +30,6 @@ function parseProps(props) {
         defaults: defaults
     };
 }
-
-var PropTypes = React$1.PropTypes;
 
 function Node() {}
 function Element() {}
@@ -104,6 +70,39 @@ function _translateType(Type) {
 exports.Element = Element;
 exports.parseProps = parseProps;
 */
+
+//module.exports = function( propTypes ){
+var pureRender = function (propTypes) {
+    var ctor = ['var v;this._s=s&&s._changeToken'],
+        isChanged = ['var v;return(s&&s._changeToken!==t._s)'];
+
+    for (var name in propTypes) {
+        var propExpr = '((v=p.' + name + ')&&v._changeToken)||v';
+
+        ctor.push('this.' + name + '=' + propExpr);
+        isChanged.push('t.' + name + '!==(' + propExpr + ')');
+    }
+
+    var ChangeTokens = new Function('p', 's', ctor.join(';')),
+        isChanged = new Function('t', 'p', 's', isChanged.join('||'));
+
+    ChangeTokens.prototype = null;
+
+    return {
+        _changeTokens: null,
+
+        shouldComponentUpdate(nextProps) {
+            return isChanged(this._changeTokens, nextProps, this.state);
+        },
+
+        componentDidMount() {
+            this._changeTokens = new ChangeTokens(this.props, this.state);
+        },
+        componentDidUpdate() {
+            this._changeTokens = new ChangeTokens(this.props, this.state);
+        }
+    };
+};
 
 function processSpec(spec, a_baseProto) {
     var baseProto = a_baseProto || {};
@@ -476,7 +475,7 @@ function getTypeSpecs(spec, name) {
     return attributes;
 }
 
-var reactMixinRules = {
+const reactMixinRules = {
     componentWillMount: 'reverse',
     componentDidMount: 'reverse',
     componentWillReceiveProps: 'reverse',
@@ -492,8 +491,8 @@ var reactMixinRules = {
     getChildContext: 'mergeSequence'
 };
 
-function createClass(a_spec) {
-    var spec = processSpec(a_spec),
+/*export default function createClass( a_spec ){
+    var spec = processSpec( a_spec ),
         mixins = spec.mixins || [];
 
     delete spec.mixins;
@@ -501,17 +500,17 @@ function createClass(a_spec) {
     // We have the reversed sequence for the majority of the lifecycle hooks.
     // So, mixins lifecycle methods works first. It's important.
     // To make it consistent with class mixins implementation, we override React mixins.
-    for (var i = 0; i < mixins.length; i++) {
-        mergeProps(spec, mixins[i], reactMixinRules);
+    for( var i = 0; i < mixins.length; i++ ){
+        mergeProps( spec, mixins[ i ], reactMixinRules );
     }
 
-    var Component = React$1.createClass(spec);
+    var Component = React.createClass( spec );
 
     // attach lazily evaluated backbone View class
     //defineBackboneProxy( Component );
 
     return Component;
-}
+}*/
 
 Mixable.mixTo(React$1.Component);
 
@@ -556,7 +555,7 @@ const NestedReact = Object.create(React$1);
 
 // listenToProps, listenToState, model, attributes, Model
 //NestedReact.createClass = require( './createClass' );
-NestedReact.createClass = createClass;
+//NestedReact.createClass = createClass;
 NestedReact.define = define;
 
 // export hook to override base View class used...

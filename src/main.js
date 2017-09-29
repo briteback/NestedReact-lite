@@ -1,7 +1,7 @@
 import React from 'react';
 import { define as defImport } from 'nestedtypes';
-//import createClass from './createClass';
 import { Node, Element } from './propTypes';
+import './createClass';
 
 /*var React    = require( 'react' ),
     ReactDOM = require( 'react-dom' ),
